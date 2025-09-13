@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal e-Aduan MPP Tingkatan 6</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #004080;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #004080;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: #004080;
+      color: white;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0066cc;
+    }
+    .success {
+      margin-top: 20px;
+      padding: 15px;
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Portal e-Aduan MPP Tingkatan 6</h1>
+</header>
+
+<div class="container">
+  <h2>Hantar Aduan Anda</h2>
+  <form id="aduanForm">
+    <label for="nama">Nama (pilihan):</label>
+    <input type="text" id="nama" placeholder="Boleh kosong jika anonim">
+
+    <label for="kelas">Kelas:</label>
+    <input type="text" id="kelas" placeholder="Contoh: 6A">
+
+    <label for="kategori">Kategori Aduan:</label>
+    <select id="kategori" required>
+      <option value="">-- Pilih kategori --</option>
+      <option value="Kemudahan">Kemudahan</option>
+      <option value="Akademik">Akademik</option>
+      <option value="Disiplin">Disiplin</option>
+      <option value="Kantin">Kantin</option>
+      <option value="Lain-lain">Lain-lain</option>
+    </select>
+
+    <label for="aduan">Aduan Anda:</label>
+    <textarea id="aduan" rows="5" placeholder="Tulis aduan anda di sini..." required></textarea>
+
+    <button type="submit">Hantar Aduan</button>
+  </form>
+
+  <div class="success" id="successMessage">
+    ✅ Aduan berjaya dihantar! Terima kasih kerana berkongsi.
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+
+<script>
+  // Konfigurasi Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyD02BBBqbetJ2MV6tl2WBysXyIWXKGB7xI",
+    authDomain: "arduino-registrations.firebaseapp.com",
+    projectId: "arduino-registrations",
+    storageBucket: "arduino-registrations.firebasestorage.app",
+    messagingSenderId: "628252066469",
+    appId: "1:628252066469:web:e01196d329a2bc3e6c834c"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // Handle form submit
+  document.getElementById("aduanForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const nama = document.getElementById("nama").value;
+    const kelas = document.getElementById("kelas").value;
+    const kategori = document.getElementById("kategori").value;
+    const aduan = document.getElementById("aduan").value;
+
+    try {
+      await db.collection("aduan").add({
+        nama: nama || "Anonim",
+        kelas: kelas,
+        kategori: kategori,
+        aduan: aduan,
+        tarikh: new Date(),
+        status: "Baru"
+      });
+
+      document.getElementById("successMessage").style.display = "block";
+      document.getElementById("aduanForm").reset();
+    } catch (error) {
+      alert("❌ Ralat: " + error.message);
+    }
+  });
+</script>
+
+</body>
+</html>

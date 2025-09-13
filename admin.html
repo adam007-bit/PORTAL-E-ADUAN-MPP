@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal e-Aduan - Admin</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    table thead {
+      background: #007BFF;
+      color: white;
+    }
+    table th, table td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    table tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .status {
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    .status.baru { background: #ffc107; color: #333; }
+    .status.proses { background: #17a2b8; color: white; }
+    .status.selesai { background: #28a745; color: white; }
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-update {
+      background: #007BFF;
+      color: white;
+    }
+    .btn-update:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 Senarai Aduan Pelajar</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nama</th>
+        <th>Kelas</th>
+        <th>Kategori</th>
+        <th>Aduan</th>
+        <th>Tarikh</th>
+        <th>Status</th>
+        <th>Tindakan</th>
+      </tr>
+    </thead>
+    <tbody id="aduanTable">
+      <!-- Data akan dimasukkan dengan JS -->
+    </tbody>
+  </table>
+
+  <script>
+    // Contoh data aduan (mockup tanpa Firebase)
+    const aduanList = [
+      {
+        nama: "Anonim",
+        kelas: "6A",
+        kategori: "Kemudahan",
+        aduan: "Kipas bilik 6A rosak",
+        tarikh: "2025-09-13 10:30 AM",
+        status: "Baru"
+      },
+      {
+        nama: "Aisyah",
+        kelas: "6B",
+        kategori: "Kebersihan",
+        aduan: "Tong sampah penuh di blok C",
+        tarikh: "2025-09-12 09:15 AM",
+        status: "Proses"
+      },
+      {
+        nama: "Hakim",
+        kelas: "6C",
+        kategori: "Keselamatan",
+        aduan: "Lampu koridor tingkat 2 tidak berfungsi",
+        tarikh: "2025-09-10 03:45 PM",
+        status: "Selesai"
+      }
+    ];
+
+    // Senarai status ikut turutan
+    const statusFlow = ["Baru", "Proses", "Selesai"];
+
+    const tableBody = document.getElementById("aduanTable");
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      aduanList.forEach((a, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${a.nama}</td>
+          <td>${a.kelas}</td>
+          <td>${a.kategori}</td>
+          <td>${a.aduan}</td>
+          <td>${a.tarikh}</td>
+          <td><span class="status ${a.status.toLowerCase()}">${a.status}</span></td>
+          <td><button class="btn-update" onclick="updateStatus(${index})">Update Status</button></td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function updateStatus(index) {
+      let currentStatus = aduanList[index].status;
+      let nextIndex = (statusFlow.indexOf(currentStatus) + 1) % statusFlow.length;
+      aduanList[index].status = statusFlow[nextIndex];
+      renderTable(); // Refresh table
+    }
+
+    // Render pertama kali
+    renderTable();
+  </script>
+</body>
+</html>

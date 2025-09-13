@@ -2,158 +2,55 @@
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal e-Aduan</title>
+  <title>Portal e-Aduan Pelajar</title>
   <style>
-    body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f4f6f9; }
-    h1, h2 { text-align:center; }
-    .hidden { display:none; }
-    .card { background:white; padding:20px; border-radius:10px; max-width:500px; margin:20px auto; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-    label { display:block; margin:10px 0 5px; }
-    input, select, textarea, button {
-      width:100%; padding:10px; margin-bottom:15px;
-      border:1px solid #ccc; border-radius:5px;
-    }
-    button { background:#007bff; color:white; border:none; cursor:pointer; }
-    button:hover { background:#0056b3; }
-    table { width:100%; border-collapse:collapse; margin-top:20px; background:white; }
-    th, td { padding:10px; border:1px solid #ddd; }
-    thead { background:#007bff; color:white; }
-    .status { padding:5px 10px; border-radius:5px; font-weight:bold; }
-    .baru { background:#ffc107; }
-    .proses { background:#17a2b8; color:white; }
-    .selesai { background:#28a745; color:white; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+    header { background: #004aad; color: white; padding: 15px; text-align: center; }
+    .container { max-width: 500px; margin: 30px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    label { display: block; margin: 10px 0 5px; font-weight: bold; }
+    input, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #004aad; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+    button:hover { background: #003080; }
+    .msg { margin-top: 15px; color: green; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>🌐 Portal e-Aduan</h1>
+  <header>
+    <h1>Portal e-Aduan Pelajar</h1>
+  </header>
 
-  <!-- Login -->
-  <div id="login" class="card">
-    <h2>Log Masuk</h2>
-    <label>Pilih Peranan</label>
-    <select id="role">
-      <option value="pelajar">Pelajar</option>
-      <option value="admin">Admin</option>
-    </select>
-    <button onclick="login()">Masuk</button>
-  </div>
-
-  <!-- Borang Aduan (Pelajar) -->
-  <div id="pelajarSection" class="card hidden">
-    <h2>Borang Aduan Pelajar</h2>
+  <div class="container">
     <form id="aduanForm">
       <label>Nama</label>
-      <input type="text" id="nama" placeholder="Boleh guna Anonim">
+      <input type="text" id="nama" required>
+
       <label>Kelas</label>
       <input type="text" id="kelas" required>
-      <label>Kategori</label>
-      <select id="kategori" required>
-        <option value="Kemudahan">Kemudahan</option>
-        <option value="Kebersihan">Kebersihan</option>
-        <option value="Keselamatan">Keselamatan</option>
-        <option value="Lain-lain">Lain-lain</option>
-      </select>
+
       <label>Aduan</label>
-      <textarea id="aduan" required></textarea>
+      <textarea id="aduan" rows="5" required></textarea>
+
       <button type="submit">Hantar Aduan</button>
     </form>
-    <button onclick="logout()">Log Keluar</button>
-  </div>
-
-  <!-- Admin Section -->
-  <div id="adminSection" class="hidden">
-    <h2>📋 Senarai Aduan Pelajar</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Nama</th>
-          <th>Kelas</th>
-          <th>Kategori</th>
-          <th>Aduan</th>
-          <th>Tarikh</th>
-          <th>Status</th>
-          <th>Tindakan</th>
-        </tr>
-      </thead>
-      <tbody id="aduanTable"></tbody>
-    </table>
-    <button onclick="logout()">Log Keluar</button>
+    <div class="msg" id="msg"></div>
   </div>
 
   <script>
-    // Load data dari localStorage
-    let aduanList = JSON.parse(localStorage.getItem("aduanList")) || [];
-
-    function saveData() {
-      localStorage.setItem("aduanList", JSON.stringify(aduanList));
-    }
-
-    function login() {
-      const role = document.getElementById("role").value;
-      document.getElementById("login").classList.add("hidden");
-      if (role === "pelajar") {
-        document.getElementById("pelajarSection").classList.remove("hidden");
-      } else {
-        document.getElementById("adminSection").classList.remove("hidden");
-        renderTable();
-      }
-    }
-
-    function logout() {
-      document.getElementById("pelajarSection").classList.add("hidden");
-      document.getElementById("adminSection").classList.add("hidden");
-      document.getElementById("login").classList.remove("hidden");
-    }
-
-    // Pelajar submit aduan
-    document.getElementById("aduanForm").addEventListener("submit", function(e) {
+    document.getElementById("aduanForm").addEventListener("submit", function(e){
       e.preventDefault();
-      const aduan = {
-        nama: document.getElementById("nama").value || "Anonim",
-        kelas: document.getElementById("kelas").value,
-        kategori: document.getElementById("kategori").value,
-        aduan: document.getElementById("aduan").value,
-        tarikh: new Date().toLocaleString(),
-        status: "Baru"
-      };
-      aduanList.push(aduan);
-      saveData();
-      alert("Aduan berjaya dihantar!");
+      const nama = document.getElementById("nama").value;
+      const kelas = document.getElementById("kelas").value;
+      const aduan = document.getElementById("aduan").value;
+
+      const data = { nama, kelas, aduan, status: "Dalam Proses", masa: new Date().toLocaleString() };
+
+      let senarai = JSON.parse(localStorage.getItem("aduanPelajar")) || [];
+      senarai.push(data);
+      localStorage.setItem("aduanPelajar", JSON.stringify(senarai));
+
+      document.getElementById("msg").innerText = "✅ Aduan berjaya dihantar!";
       document.getElementById("aduanForm").reset();
     });
-
-    // Render table untuk admin
-    function renderTable() {
-      const tbody = document.getElementById("aduanTable");
-      tbody.innerHTML = "";
-      aduanList.forEach((a, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${a.nama}</td>
-          <td>${a.kelas}</td>
-          <td>${a.kategori}</td>
-          <td>${a.aduan}</td>
-          <td>${a.tarikh}</td>
-          <td><span class="status ${a.status.toLowerCase()}">${a.status}</span></td>
-          <td><button onclick="updateStatus(${i})">Update Status</button></td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    // Update status aduan
-    function updateStatus(index) {
-      if (aduanList[index].status === "Baru") {
-        aduanList[index].status = "Proses";
-      } else if (aduanList[index].status === "Proses") {
-        aduanList[index].status = "Selesai";
-      } else {
-        aduanList[index].status = "Baru";
-      }
-      saveData();
-      renderTable();
-    }
   </script>
 </body>
 </html>

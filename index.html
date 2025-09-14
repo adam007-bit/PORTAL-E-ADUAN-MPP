@@ -24,14 +24,26 @@
 
   <h2 id="title" class="text-center mb-4">📢 Portal Aduan Pelajar SEMSIRA</h2>
 
-  <!-- Hantar Aduan -->
+  <!-- Masukkan Nama & Kelas -->
   <div class="card p-4 mb-4">
+    <h4>Maklumat Pelajar</h4>
+    <form id="studentInfoForm">
+      <div class="mb-3">
+        <label class="form-label">Nama Pelajar</label>
+        <input type="text" id="studentName" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Kelas</label>
+        <input type="text" id="studentClass" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Simpan</button>
+    </form>
+  </div>
+
+  <!-- Hantar Aduan -->
+  <div class="card p-4 mb-4" id="complaintCard" style="display:none;">
     <h4 id="sendComplaintTitle">Hantar Aduan</h4>
     <form id="aduanForm">
-      <div class="mb-3">
-        <label id="labelName" class="form-label">Nama Pelajar</label>
-        <input type="text" id="nama" class="form-control" required>
-      </div>
       <div class="mb-3">
         <label id="labelComplaint" class="form-label">Aduan</label>
         <textarea id="aduan" class="form-control" rows="3" required></textarea>
@@ -41,22 +53,25 @@
     <div id="successMsg" class="alert alert-success mt-3"></div>
   </div>
 
-  <!-- Semak Status -->
-  <div class="card p-4">
-    <h4 id="checkStatusTitle">Semak Status Aduan</h4>
-    <div class="input-group mb-3">
-      <input type="text" id="checkId" class="form-control" placeholder="Masukkan Nombor Aduan">
-      <button id="btnCheck" class="btn btn-secondary" onclick="checkStatus()">Semak</button>
-    </div>
-    <div id="statusResult" class="alert alert-info" style="display:none;"></div>
+  <!-- Aduan Pelajar -->
+  <div class="card p-4 mb-4" id="myAduanCard" style="display:none;">
+    <h4>Aduan Anda</h4>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Aduan</th><th>Status</th><th>Tarikh</th><th>Nota Admin</th>
+        </tr>
+      </thead>
+      <tbody id="studentComplaints"></tbody>
+    </table>
   </div>
 </div>
 
 <script type="module">
-  // Firebase
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCkStR_IPVoyw83P9M3Xm0QayvNmHwsjz0",
     authDomain: "aduan-semsira.firebaseapp.com",
@@ -69,126 +84,70 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Translation dictionary
-  const translations = {
-    ms: {
-      title: "📢 Portal Aduan Pelajar SEMSIRA",
-      sendComplaintTitle: "Hantar Aduan",
-      labelName: "Nama Pelajar",
-      labelComplaint: "Aduan",
-      btnSubmit: "Hantar Aduan",
-      checkStatusTitle: "Semak Status Aduan",
-      placeholderCheck: "Masukkan Nombor Aduan",
-      btnCheck: "Semak",
-      success: id => `✅ Aduan berjaya dihantar! Nombor Aduan anda: <strong>${id}</strong>`,
-      notFound: "❌ Nombor aduan tidak dijumpai!",
-      statusLabel: "Status",
-      dateLabel: "Tarikh",
-      noteLabel: "Nota"
-    },
-    en: {
-      title: "📢 SEMSIRA Student Complaint Portal",
-      sendComplaintTitle: "Submit Complaint",
-      labelName: "Student Name",
-      labelComplaint: "Complaint",
-      btnSubmit: "Submit",
-      checkStatusTitle: "Check Complaint Status",
-      placeholderCheck: "Enter Complaint ID",
-      btnCheck: "Check",
-      success: id => `✅ Complaint submitted successfully! Your Complaint ID: <strong>${id}</strong>`,
-      notFound: "❌ Complaint ID not found!",
-      statusLabel: "Status",
-      dateLabel: "Date",
-      noteLabel: "Note"
-    },
-    zh: {
-      title: "📢 SEMSIRA 学生投诉门户",
-      sendComplaintTitle: "提交投诉",
-      labelName: "学生姓名",
-      labelComplaint: "投诉内容",
-      btnSubmit: "提交",
-      checkStatusTitle: "查询投诉状态",
-      placeholderCheck: "输入投诉编号",
-      btnCheck: "查询",
-      success: id => `✅ 投诉已成功提交！您的投诉编号是：<strong>${id}</strong>`,
-      notFound: "❌ 未找到投诉编号！",
-      statusLabel: "状态",
-      dateLabel: "日期",
-      noteLabel: "备注"
-    }
-  };
+  let studentName = "";
+  let studentClass = "";
 
-  let currentLang = "ms";
+  const studentInfoForm = document.getElementById("studentInfoForm");
+  const complaintCard = document.getElementById("complaintCard");
+  const myAduanCard = document.getElementById("myAduanCard");
 
-  function applyTranslation() {
-    const t = translations[currentLang];
-    document.getElementById("title").innerText = t.title;
-    document.getElementById("sendComplaintTitle").innerText = t.sendComplaintTitle;
-    document.getElementById("labelName").innerText = t.labelName;
-    document.getElementById("labelComplaint").innerText = t.labelComplaint;
-    document.getElementById("btnSubmit").innerText = t.btnSubmit;
-    document.getElementById("checkStatusTitle").innerText = t.checkStatusTitle;
-    document.getElementById("checkId").placeholder = t.placeholderCheck;
-    document.getElementById("btnCheck").innerText = t.btnCheck;
-  }
-
-  document.getElementById("languageSwitcher").addEventListener("change", function() {
-    currentLang = this.value;
-    applyTranslation();
-  });
-
-  applyTranslation();
-
-  // Submit form
-  document.getElementById("aduanForm").addEventListener("submit", async function(e) {
+  studentInfoForm.addEventListener("submit", (e)=>{
     e.preventDefault();
-    const nama = document.getElementById("nama").value;
-    const aduanText = document.getElementById("aduan").value;
-    const id = "ADUAN-" + Date.now(); // unik ID
-    const date = new Date().toLocaleString();
-
-    await addDoc(collection(db, "aduan"), {
-      id: id,
-      nama: nama,
-      aduan: aduanText,
-      status: "Dalam Proses",
-      tarikh: date,
-      nota: ""
-    });
-
-    const msg = document.getElementById("successMsg");
-    msg.style.display = "block";
-    msg.innerHTML = translations[currentLang].success(id);
-
-    document.getElementById("aduanForm").reset();
+    studentName = document.getElementById("studentName").value.trim().toUpperCase();
+    studentClass = document.getElementById("studentClass").value.trim().toUpperCase();
+    complaintCard.style.display = "block";
+    myAduanCard.style.display = "block";
+    loadStudentComplaints();
   });
 
-  // Check status
-  async function checkStatus() {
-    const checkId = document.getElementById("checkId").value.trim();
-    const t = translations[currentLang];
-    const querySnapshot = await getDocs(collection(db, "aduan"));
-    const aduanDoc = querySnapshot.docs.find(docSnap => docSnap.data().id === checkId);
-
-    const result = document.getElementById("statusResult");
-    if(aduanDoc){
-      const a = aduanDoc.data();
-      result.style.display = "block";
-      result.className = "alert alert-info";
-      result.innerHTML = `<strong>ID:</strong> ${a.id}<br>
-                          <strong>${t.statusLabel}:</strong> ${a.status}<br>
-                          <strong>${t.dateLabel}:</strong> ${a.tarikh}<br>
-                          <strong>${t.noteLabel}:</strong> ${a.nota||"-"}`;
-    } else {
-      result.style.display = "block";
-      result.className = "alert alert-danger";
-      result.innerText = t.notFound;
+  const aduanForm = document.getElementById("aduanForm");
+  aduanForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const aduanText = document.getElementById("aduan").value.trim();
+    if(!aduanText) return;
+    try{
+      await addDoc(collection(db,"aduan"),{
+        nama: studentName,
+        kelas: studentClass,
+        aduan: aduanText,
+        status: "Dalam Proses",
+        tarikh: new Date().toLocaleString(),
+        nota: ""
+      });
+      document.getElementById("aduanForm").reset();
+      document.getElementById("successMsg").style.display="block";
+      document.getElementById("successMsg").innerText="✅ Aduan berjaya dihantar!";
+    } catch(err){
+      alert("❌ Gagal hantar aduan: "+err.message);
     }
+  });
+
+  function loadStudentComplaints(){
+    const q = query(collection(db,"aduan"));
+    onSnapshot(q, (snapshot)=>{
+      const tbody = document.getElementById("studentComplaints");
+      tbody.innerHTML="";
+      snapshot.forEach(docSnap=>{
+        const a = docSnap.data();
+        if(a.nama.toUpperCase() === studentName && a.kelas.toUpperCase() === studentClass){
+          tbody.innerHTML += `<tr>
+            <td>${docSnap.id}</td>
+            <td>${a.aduan}</td>
+            <td>${a.status}</td>
+            <td>${a.tarikh}</td>
+            <td>${a.nota||"-"}</td>
+          </tr>`;
+          // alert bila admin update
+          if(!a._notified){
+            alert(`Aduan ${docSnap.id} dikemaskini: ${a.status}`);
+            docSnap.ref.update({_notified:true}).catch(()=>{});
+          }
+        }
+      });
+    });
   }
 </script>
 </body>
 </html>
-
-
 
 

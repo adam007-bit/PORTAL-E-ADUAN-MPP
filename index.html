@@ -43,17 +43,14 @@
 
   <div id="notif" class="card" style="display:none;"></div>
 
-  <h2>Status Aduan Saya</h2>
-  <table id="aduanTable">
-    <thead>
-      <tr>
-        <th>ID Aduan</th>
-        <th>Aduan</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <h2>Semak Status Aduan</h2>
+  <form id="checkForm">
+    <label>Masukkan ID Aduan:</label>
+    <input type="text" id="checkID" placeholder="Contoh: ADUAN-001" required>
+    <button type="submit">Semak</button>
+  </form>
+
+  <div id="result" class="card" style="display:none;"></div>
 </div>
 
 <footer>
@@ -65,21 +62,6 @@
 
   function generateID() {
     return "ADUAN-" + String(aduanList.length + 1).padStart(3, "0");
-  }
-
-  function renderAduanPelajar() {
-    const tbody = document.querySelector("#aduanTable tbody");
-    tbody.innerHTML = "";
-    aduanList.forEach(a => {
-      let statusClass = a.status === "Dalam Proses" ? "status-proses" : 
-                        a.status === "Selesai" ? "status-selesai" : "status-ditolak";
-      tbody.innerHTML += `
-        <tr>
-          <td>${a.id}</td>
-          <td>${a.aduan}</td>
-          <td class="${statusClass}">${a.status}</td>
-        </tr>`;
-    });
   }
 
   document.getElementById("aduanForm").addEventListener("submit", e => {
@@ -95,10 +77,29 @@
     document.getElementById("notif").innerHTML = `✅ Aduan berjaya dihantar! ID anda: <b>${newAduan.id}</b>`;
 
     e.target.reset();
-    renderAduanPelajar();
   });
 
-  renderAduanPelajar();
+  document.getElementById("checkForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const checkID = document.getElementById("checkID").value.trim();
+    const resultDiv = document.getElementById("result");
+
+    const aduan = aduanList.find(a => a.id === checkID);
+
+    if (aduan) {
+      let statusClass = aduan.status === "Dalam Proses" ? "status-proses" : 
+                        aduan.status === "Selesai" ? "status-selesai" : "status-ditolak";
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = `
+        <b>ID Aduan:</b> ${aduan.id}<br>
+        <b>Aduan:</b> ${aduan.aduan}<br>
+        <b>Status:</b> <span class="${statusClass}">${aduan.status}</span>
+      `;
+    } else {
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = "❌ ID Aduan tidak dijumpai.";
+    }
+  });
 </script>
 
 </body>

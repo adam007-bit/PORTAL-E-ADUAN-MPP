@@ -4,18 +4,22 @@
   <meta charset="UTF-8">
   <title>Portal e-Aduan Pelajar</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
-    header { background: #004aad; color: white; padding: 15px; text-align: center; }
-    .container { max-width: 600px; margin: 30px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; margin: 0; }
+    header { background: #004aad; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    .container { max-width: 700px; margin: 30px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
+    h2 { color: #004aad; }
     label { display: block; margin: 10px 0 5px; font-weight: bold; }
-    input, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ccc; }
-    button { background: #004aad; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+    input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 15px; }
+    button { background: #004aad; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; }
     button:hover { background: #003080; }
-    .msg { margin-top: 15px; color: green; font-weight: bold; }
-    .status-box { margin-top: 25px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background: #fafafa; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    .msg { margin-top: 10px; font-weight: bold; }
+    .status-box { margin-top: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
     th { background: #004aad; color: white; }
+    .status-proses { background: #fff3cd; color: #856404; padding: 5px 10px; border-radius: 6px; font-weight: bold; }
+    .status-selesai { background: #d4edda; color: #155724; padding: 5px 10px; border-radius: 6px; font-weight: bold; }
+    .status-ditolak { background: #f8d7da; color: #721c24; padding: 5px 10px; border-radius: 6px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -24,9 +28,8 @@
   </header>
 
   <div class="container">
-    <!-- Borang Aduan -->
+    <h2>Hantar Aduan Baru</h2>
     <form id="aduanForm">
-      <h3>Hantar Aduan Baru</h3>
       <label>Nama</label>
       <input type="text" id="nama" required>
 
@@ -36,20 +39,20 @@
       <label>Aduan</label>
       <textarea id="aduan" rows="5" required></textarea>
 
-      <button type="submit">Hantar Aduan</button>
+      <button type="submit">📩 Hantar Aduan</button>
     </form>
     <div class="msg" id="msg"></div>
 
-    <!-- Semak Status -->
     <div class="status-box">
-      <h3>Semak Status Aduan Anda</h3>
+      <h2>Semak Status Aduan</h2>
       <label>Masukkan Nama Anda</label>
       <input type="text" id="semakNama" placeholder="Contoh: Ali Bin Abu">
-      <button onclick="semakStatus()">Semak</button>
+      <button onclick="semakStatus()">🔍 Semak</button>
 
       <table id="resultTable" style="display:none;">
         <thead>
           <tr>
+            <th>ID Aduan</th>
             <th>Kelas</th>
             <th>Aduan</th>
             <th>Masa</th>
@@ -62,24 +65,30 @@
   </div>
 
   <script>
-    // Simpan aduan
+    function generateID(){
+      let count = localStorage.getItem("aduanCount") || 0;
+      count++;
+      localStorage.setItem("aduanCount", count);
+      return "ADUAN-" + String(count).padStart(4,"0");
+    }
+
     document.getElementById("aduanForm").addEventListener("submit", function(e){
       e.preventDefault();
       const nama = document.getElementById("nama").value;
       const kelas = document.getElementById("kelas").value;
       const aduan = document.getElementById("aduan").value;
+      const id = generateID();
 
-      const data = { nama, kelas, aduan, status: "Dalam Proses", masa: new Date().toLocaleString() };
+      const data = { id, nama, kelas, aduan, status: "Dalam Proses", masa: new Date().toLocaleString() };
 
       let senarai = JSON.parse(localStorage.getItem("aduanPelajar")) || [];
       senarai.push(data);
       localStorage.setItem("aduanPelajar", JSON.stringify(senarai));
 
-      document.getElementById("msg").innerText = "✅ Aduan berjaya dihantar!";
+      document.getElementById("msg").innerHTML = `✅ Aduan berjaya dihantar! <br><b>ID Anda: ${id}</b>`;
       document.getElementById("aduanForm").reset();
     });
 
-    // Semak status aduan berdasarkan nama
     function semakStatus(){
       const namaCari = document.getElementById("semakNama").value.trim().toLowerCase();
       const senarai = JSON.parse(localStorage.getItem("aduanPelajar")) || [];
@@ -92,12 +101,15 @@
       if(filter.length > 0){
         resultTable.style.display = "table";
         filter.forEach(item => {
+          const statusClass = item.status === "Dalam Proses" ? "status-proses" :
+                             item.status === "Selesai" ? "status-selesai" : "status-ditolak";
           const row = document.createElement("tr");
           row.innerHTML = `
+            <td>${item.id}</td>
             <td>${item.kelas}</td>
             <td>${item.aduan}</td>
             <td>${item.masa}</td>
-            <td>${item.status}</td>
+            <td><span class="${statusClass}">${item.status}</span></td>
           `;
           tbody.appendChild(row);
         });

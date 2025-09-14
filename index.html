@@ -13,31 +13,40 @@
 </head>
 <body>
 <div class="container py-5">
-  <h2 class="text-center mb-4">📢 Portal Aduan Pelajar SEMSIRA</h2>
+  <!-- Language Selector -->
+  <div class="text-end mb-3">
+    <select id="languageSwitcher" class="form-select w-auto d-inline">
+      <option value="ms">🇲🇾 BM</option>
+      <option value="en">🇬🇧 EN</option>
+      <option value="zh">🇨🇳 中文</option>
+    </select>
+  </div>
+
+  <h2 id="title" class="text-center mb-4">📢 Portal Aduan Pelajar SEMSIRA</h2>
 
   <!-- Hantar Aduan -->
   <div class="card p-4 mb-4">
-    <h4>Hantar Aduan</h4>
+    <h4 id="sendComplaintTitle">Hantar Aduan</h4>
     <form id="aduanForm">
       <div class="mb-3">
-        <label class="form-label">Nama Pelajar</label>
+        <label id="labelName" class="form-label">Nama Pelajar</label>
         <input type="text" id="nama" class="form-control" required>
       </div>
       <div class="mb-3">
-        <label class="form-label">Aduan</label>
+        <label id="labelComplaint" class="form-label">Aduan</label>
         <textarea id="aduan" class="form-control" rows="3" required></textarea>
       </div>
-      <button type="submit" class="btn btn-primary">Hantar Aduan</button>
+      <button id="btnSubmit" type="submit" class="btn btn-primary">Hantar Aduan</button>
     </form>
     <div id="successMsg" class="alert alert-success mt-3"></div>
   </div>
 
   <!-- Semak Status -->
   <div class="card p-4">
-    <h4>Semak Status Aduan</h4>
+    <h4 id="checkStatusTitle">Semak Status Aduan</h4>
     <div class="input-group mb-3">
       <input type="text" id="checkId" class="form-control" placeholder="Masukkan Nombor Aduan">
-      <button class="btn btn-secondary" onclick="checkStatus()">Semak</button>
+      <button id="btnCheck" class="btn btn-secondary" onclick="checkStatus()">Semak</button>
     </div>
     <div id="statusResult" class="alert alert-info" style="display:none;"></div>
   </div>
@@ -46,6 +55,77 @@
 <script>
 let aduanList = JSON.parse(localStorage.getItem("aduanList") || "[]");
 
+// Translation dictionary
+const translations = {
+  ms: {
+    title: "📢 Portal Aduan Pelajar SEMSIRA",
+    sendComplaintTitle: "Hantar Aduan",
+    labelName: "Nama Pelajar",
+    labelComplaint: "Aduan",
+    btnSubmit: "Hantar Aduan",
+    checkStatusTitle: "Semak Status Aduan",
+    placeholderCheck: "Masukkan Nombor Aduan",
+    btnCheck: "Semak",
+    success: id => `✅ Aduan berjaya dihantar! Nombor Aduan anda: <strong>${id}</strong>`,
+    notFound: "❌ Nombor aduan tidak dijumpai!",
+    statusLabel: "Status",
+    dateLabel: "Tarikh",
+    noteLabel: "Nota"
+  },
+  en: {
+    title: "📢 SEMSIRA Student Complaint Portal",
+    sendComplaintTitle: "Submit Complaint",
+    labelName: "Student Name",
+    labelComplaint: "Complaint",
+    btnSubmit: "Submit",
+    checkStatusTitle: "Check Complaint Status",
+    placeholderCheck: "Enter Complaint ID",
+    btnCheck: "Check",
+    success: id => `✅ Complaint submitted successfully! Your Complaint ID: <strong>${id}</strong>`,
+    notFound: "❌ Complaint ID not found!",
+    statusLabel: "Status",
+    dateLabel: "Date",
+    noteLabel: "Note"
+  },
+  zh: {
+    title: "📢 SEMSIRA 学生投诉门户",
+    sendComplaintTitle: "提交投诉",
+    labelName: "学生姓名",
+    labelComplaint: "投诉内容",
+    btnSubmit: "提交",
+    checkStatusTitle: "查询投诉状态",
+    placeholderCheck: "输入投诉编号",
+    btnCheck: "查询",
+    success: id => `✅ 投诉已成功提交！您的投诉编号是：<strong>${id}</strong>`,
+    notFound: "❌ 未找到投诉编号！",
+    statusLabel: "状态",
+    dateLabel: "日期",
+    noteLabel: "备注"
+  }
+};
+
+// Current language
+let currentLang = "ms";
+
+// Apply translation
+function applyTranslation() {
+  const t = translations[currentLang];
+  document.getElementById("title").innerText = t.title;
+  document.getElementById("sendComplaintTitle").innerText = t.sendComplaintTitle;
+  document.getElementById("labelName").innerText = t.labelName;
+  document.getElementById("labelComplaint").innerText = t.labelComplaint;
+  document.getElementById("btnSubmit").innerText = t.btnSubmit;
+  document.getElementById("checkStatusTitle").innerText = t.checkStatusTitle;
+  document.getElementById("checkId").placeholder = t.placeholderCheck;
+  document.getElementById("btnCheck").innerText = t.btnCheck;
+}
+
+document.getElementById("languageSwitcher").addEventListener("change", function() {
+  currentLang = this.value;
+  applyTranslation();
+});
+
+// Form submit
 document.getElementById("aduanForm").addEventListener("submit", function(e){
   e.preventDefault();
   const nama = document.getElementById("nama").value;
@@ -57,7 +137,7 @@ document.getElementById("aduanForm").addEventListener("submit", function(e){
 
   const msg = document.getElementById("successMsg");
   msg.style.display="block";
-  msg.innerHTML = `✅ Aduan berjaya dihantar! Nombor Aduan anda: <strong>${id}</strong>`;
+  msg.innerHTML = translations[currentLang].success(id);
 
   document.getElementById("aduanForm").reset();
 });
@@ -67,21 +147,24 @@ function checkStatus(){
   const result = document.getElementById("statusResult");
   const aduan = aduanList.find(a=>a.id===id);
   if(aduan){
+    const t = translations[currentLang];
     result.style.display="block";
     result.className="alert alert-info";
     result.innerHTML = `<strong>ID:</strong> ${aduan.id}<br>
-                        <strong>Status:</strong> ${aduan.status}<br>
-                        <strong>Tarikh:</strong> ${aduan.tarikh}<br>
-                        <strong>Nota:</strong> ${aduan.nota||"-"}`;
+                        <strong>${t.statusLabel}:</strong> ${aduan.status}<br>
+                        <strong>${t.dateLabel}:</strong> ${aduan.tarikh}<br>
+                        <strong>${t.noteLabel}:</strong> ${aduan.nota||"-"}`;
   } else {
     result.style.display="block";
     result.className="alert alert-danger";
-    result.innerText = "❌ Nombor aduan tidak dijumpai!";
+    result.innerText = translations[currentLang].notFound;
   }
 }
+
+// Apply default language on load
+applyTranslation();
 </script>
 </body>
 </html>
-
 
 

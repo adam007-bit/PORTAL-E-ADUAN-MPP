@@ -2,123 +2,84 @@
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
-  <title>Portal Pelajar Aduan SEMSIRA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal Pelajar - Aduan SEMSIRA</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background:#f9f9f9; }
-    h1 { color:#333; }
-    input, textarea, button { margin: 5px 0; padding: 8px; width: 100%; box-sizing: border-box; }
-    button { cursor: pointer; border:none; border-radius:4px; }
-    .btn-primary { background:#007bff; color:white; }
-    .lang-btn { margin-right:5px; padding:6px 12px; }
-    .success-box {
-      background:#d4edda; color:#155724; padding:10px;
-      border:1px solid #c3e6cb; border-radius:4px; margin-top:10px;
-    }
+    body { background:#f8f9fa; }
+    .card { border:none; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    .alert-success { display:none; }
   </style>
 </head>
 <body>
+<div class="container py-5">
+  <h2 class="text-center mb-4">📢 Portal Aduan Pelajar SEMSIRA</h2>
 
-  <!-- Butang Bahasa -->
-  <div>
-    <button class="lang-btn" onclick="setLang('ms')">🇲🇾 BM</button>
-    <button class="lang-btn" onclick="setLang('zh')">🇨🇳 中文</button>
-    <button class="lang-btn" onclick="setLang('en')">🇬🇧 English</button>
+  <!-- Hantar Aduan -->
+  <div class="card p-4 mb-4">
+    <h4>Hantar Aduan</h4>
+    <form id="aduanForm">
+      <div class="mb-3">
+        <label class="form-label">Nama Pelajar</label>
+        <input type="text" id="nama" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Aduan</label>
+        <textarea id="aduan" class="form-control" rows="3" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Hantar Aduan</button>
+    </form>
+    <div id="successMsg" class="alert alert-success mt-3"></div>
   </div>
 
-  <h1 id="title"></h1>
+  <!-- Semak Status -->
+  <div class="card p-4">
+    <h4>Semak Status Aduan</h4>
+    <div class="input-group mb-3">
+      <input type="text" id="checkId" class="form-control" placeholder="Masukkan Nombor Aduan">
+      <button class="btn btn-secondary" onclick="checkStatus()">Semak</button>
+    </div>
+    <div id="statusResult" class="alert alert-info" style="display:none;"></div>
+  </div>
+</div>
 
-  <h2 id="hantarAduan"></h2>
-  <input type="text" id="namaPelajar" placeholder="">
-  <textarea id="teksAduan" placeholder=""></textarea>
-  <button class="btn-primary" onclick="hantarAduan()" id="btnHantar"></button>
-  <div id="mesejBerjaya"></div>
+<script>
+let aduanList = JSON.parse(localStorage.getItem("aduanList") || "[]");
 
-  <h2 id="semakStatus"></h2>
-  <input type="text" id="idSemak" placeholder="">
-  <button onclick="semakAduan()" id="btnSemak"></button>
-  <div id="statusAduan"></div>
+document.getElementById("aduanForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const nama = document.getElementById("nama").value;
+  const aduan = document.getElementById("aduan").value;
+  const id = "ADUAN-" + String(aduanList.length+1).padStart(3,'0');
+  const date = new Date().toLocaleString();
+  aduanList.push({id,nama,aduan,status:"Dalam Proses",tarikh:date,nota:""});
+  localStorage.setItem("aduanList", JSON.stringify(aduanList));
 
-  <script>
-    let lang = "ms";
-    let aduanList = JSON.parse(localStorage.getItem("aduanList")) || [];
+  const msg = document.getElementById("successMsg");
+  msg.style.display="block";
+  msg.innerHTML = `✅ Aduan berjaya dihantar! Nombor Aduan anda: <strong>${id}</strong>`;
 
-    const translations = {
-      ms: {
-        title:"📌 Portal Aduan Pelajar SEMSIRA",
-        hantarAduan:"Hantar Aduan",
-        namaPlaceholder:"Nama Pelajar",
-        aduanPlaceholder:"Tulis aduan anda di sini...",
-        btnHantar:"Hantar Aduan",
-        semakStatus:"Semak Status Aduan",
-        semakPlaceholder:"Masukkan Nombor Aduan",
-        btnSemak:"Semak",
-        msgBerjaya:id=>`<div class="success-box">✅ Aduan berjaya dihantar! Nombor Aduan anda: <b>${id}</b></div>`,
-        msgTakJumpa:"❌ Nombor aduan tidak ditemui",
-      },
-      zh: {
-        title:"📌 学生投诉门户 SEMSIRA",
-        hantarAduan:"提交投诉",
-        namaPlaceholder:"学生姓名",
-        aduanPlaceholder:"在此写下您的投诉...",
-        btnHantar:"提交",
-        semakStatus:"查询投诉状态",
-        semakPlaceholder:"输入投诉编号",
-        btnSemak:"查询",
-        msgBerjaya:id=>`<div class="success-box">✅ 投诉已提交！您的投诉编号: <b>${id}</b></div>`,
-        msgTakJumpa:"❌ 未找到投诉编号",
-      },
-      en: {
-        title:"📌 Student Complaint Portal SEMSIRA",
-        hantarAduan:"Submit Complaint",
-        namaPlaceholder:"Student Name",
-        aduanPlaceholder:"Write your complaint here...",
-        btnHantar:"Submit",
-        semakStatus:"Check Complaint Status",
-        semakPlaceholder:"Enter Complaint ID",
-        btnSemak:"Check",
-        msgBerjaya:id=>`<div class="success-box">✅ Complaint submitted! Your Complaint ID: <b>${id}</b></div>`,
-        msgTakJumpa:"❌ Complaint ID not found",
-      }
-    };
+  document.getElementById("aduanForm").reset();
+});
 
-    function setLang(l) {
-      lang = l;
-      const t = translations[lang];
-      document.getElementById("title").innerText = t.title;
-      document.getElementById("hantarAduan").innerText = t.hantarAduan;
-      document.getElementById("namaPelajar").placeholder = t.namaPlaceholder;
-      document.getElementById("teksAduan").placeholder = t.aduanPlaceholder;
-      document.getElementById("btnHantar").innerText = t.btnHantar;
-      document.getElementById("semakStatus").innerText = t.semakStatus;
-      document.getElementById("idSemak").placeholder = t.semakPlaceholder;
-      document.getElementById("btnSemak").innerText = t.btnSemak;
-    }
-
-    function hantarAduan() {
-      const t = translations[lang];
-      const nama = document.getElementById("namaPelajar").value;
-      const teks = document.getElementById("teksAduan").value;
-      if(!nama || !teks) { alert("⚠️ " + t.hantarAduan + " - isi semua medan"); return; }
-
-      const id = "ADUAN-" + String(aduanList.length+1).padStart(3,"0");
-      const tarikh = new Date().toLocaleString();
-      aduanList.push({id, nama, teks, status:"Dalam Proses", tarikh, nota:""});
-      localStorage.setItem("aduanList", JSON.stringify(aduanList));
-      document.getElementById("mesejBerjaya").innerHTML = t.msgBerjaya(id);
-      document.getElementById("namaPelajar").value = "";
-      document.getElementById("teksAduan").value = "";
-    }
-
-    function semakAduan() {
-      const t = translations[lang];
-      const id = document.getElementById("idSemak").value.trim();
-      const aduan = aduanList.find(a=>a.id===id);
-      document.getElementById("statusAduan").innerHTML = aduan ?
-        `<b>${t.semakStatus}:</b> ${aduan.status} (${aduan.tarikh})` : t.msgTakJumpa;
-    }
-
-    setLang("ms");
-  </script>
+function checkStatus(){
+  const id = document.getElementById("checkId").value.trim();
+  const result = document.getElementById("statusResult");
+  const aduan = aduanList.find(a=>a.id===id);
+  if(aduan){
+    result.style.display="block";
+    result.className="alert alert-info";
+    result.innerHTML = `<strong>ID:</strong> ${aduan.id}<br>
+                        <strong>Status:</strong> ${aduan.status}<br>
+                        <strong>Tarikh:</strong> ${aduan.tarikh}<br>
+                        <strong>Nota:</strong> ${aduan.nota||"-"}`;
+  } else {
+    result.style.display="block";
+    result.className="alert alert-danger";
+    result.innerText = "❌ Nombor aduan tidak dijumpai!";
+  }
+}
+</script>
 </body>
 </html>
 

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>e-Aduan · Pelajar</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --primary:#004aad; --muted:#6b7280;
+    --accent:#ffbf00; --success:#16a34a; --danger:#dc3545; --radius:12px;
+  }
+  [data-theme="dark"]{
+    --bg:#081124; --card:#0f1724; --primary:#3b82f6; --muted:#9aa3b2; color:#e6eef8;
+  }
+
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,Arial,Segoe UI,Roboto, sans-serif;margin:0;background:var(--bg);color:inherit}
+  header{display:flex;align-items:center;gap:14px;padding:14px;background:linear-gradient(90deg,var(--primary),#2b6fb5);color:#fff}
+  header img.logo{width:60px;height:60px;border-radius:10px;object-fit:contain;background:white;padding:6px}
+  header .title{font-size:18px;font-weight:700}
+  header .sub{font-size:12px;opacity:.9}
+
+  .wrap{max-width:980px;margin:22px auto;padding:16px}
+  .grid{display:grid;grid-template-columns:1fr 400px;gap:16px}
+  @media(max-width:920px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:0 10px 30px rgba(2,6,23,0.06)}
+  h2{margin:0 0 8px 0;color:var(--primary)}
+
+  label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
+  input[type="text"], select, textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;background:transparent;font-size:14px}
+  textarea{min-height:110px;resize:vertical}
+  .row{display:flex;gap:10px}
+  .btn{background:var(--primary);color:#fff;border:0;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);color:var(--primary)}
+  .small{font-size:13px;color:var(--muted)}
+  .notif{margin-top:12px;padding:10px;border-radius:8px;background:#ecfdf5;color:var(--success);display:none}
+  .result{margin-top:12px;padding:12px;border-radius:8px;background:#f8fafc}
+
+  .status-badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700}
+  .s-proses{background:#fff7ed;color:#92400e}
+  .s-selesai{background:#ecfdf5;color:var(--success)}
+  .s-ditolak{background:#fff1f2;color:var(--danger)}
+
+  /* toast */
+  .toast{position:fixed;right:18px;bottom:18px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;display:none;z-index:40}
+  .copy-btn{margin-left:8px;padding:6px 8px;border-radius:8px;border:0;background:#111;color:#fff;cursor:pointer}
+
+  .top-controls{margin-left:auto;display:flex;gap:8px}
+  .toggle{background:transparent;border:1px solid rgba(255,255,255,0.12);padding:6px 8px;border-radius:8px;color:#fff;cursor:pointer}
+
+  footer{max-width:980px;margin:18px auto;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <img class="logo" src="logo.png" alt="Logo Sekolah">
+  <div>
+    <div class="title">SEMSIRA · Portal e-Aduan (Pelajar)</div>
+    <div class="sub">Hantar aduan & semak status menggunakan ID</div>
+  </div>
+  <div class="top-controls" style="margin-left:auto">
+    <button id="darkToggle" class="toggle">Dark</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <!-- LEFT: form -->
+    <section class="card">
+      <h2>Hantar Aduan</h2>
+      <p class="small">Sila isi butiran aduan. Selepas hantar anda akan terima <strong>ID Aduan</strong> — simpan untuk semakan.</p>
+
+      <form id="aduanForm">
+        <label>Nama</label>
+        <input type="text" id="nama" placeholder="Nama penuh (contoh: Ali bin Abu)" required>
+
+        <label>Kelas</label>
+        <input type="text" id="kelas" placeholder="Contoh: 6A" required>
+
+        <label>Kategori</label>
+        <select id="kategori">
+          <option value="Kemudahan">Kemudahan</option>
+          <option value="Akademik">Akademik</option>
+          <option value="Kebersihan">Kebersihan</option>
+          <option value="Kantin">Kantin</option>
+          <option value="Lain-lain">Lain-lain</option>
+        </select>
+
+        <label>Aduan</label>
+        <textarea id="aduan" placeholder="Terangkan masalah atau cadangan..." required></textarea>
+
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn" type="submit">📩 Hantar Aduan</button>
+          <button id="clearLocal" type="button" class="btn ghost">Kosongkan Semua (reset)</button>
+        </div>
+      </form>
+
+      <div id="notif" class="notif"></div>
+    </section>
+
+    <!-- RIGHT: check -->
+    <aside class="card">
+      <h2>Semak Aduan</h2>
+
+      <label>Semak ikut ID</label>
+      <div class="row">
+        <input type="text" id="checkID" placeholder="Contoh: ADUAN-001">
+        <button id="btnCheck" class="btn">🔍 Semak</button>
+      </div>
+
+      <div id="result" class="result" style="display:none"></div>
+
+      <hr style="margin:14px 0">
+
+      <h3 style="margin:6px 0">Cari ikut nama</h3>
+      <label>Nama</label>
+      <div class="row">
+        <input type="text" id="searchName" placeholder="Masukkan nama">
+        <button id="btnSearch" class="btn">Cari</button>
+      </div>
+
+      <div id="searchResults" style="margin-top:12px"></div>
+    </aside>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  &copy; 2025 SEMSIRA · Majlis Perwakilan Pelajar
+</footer>
+
+<script>
+  // Dark mode persist
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  if(savedTheme === 'dark') document.documentElement.setAttribute('data-theme','dark');
+  const darkToggle = document.getElementById('darkToggle');
+  darkToggle.textContent = (savedTheme==='dark') ? 'Light' : 'Dark';
+  darkToggle.addEventListener('click', ()=>{
+    const cur = document.documentElement.getAttribute('data-theme');
+    if(cur === 'dark'){ document.documentElement.removeAttribute('data-theme'); localStorage.setItem('theme','light'); darkToggle.textContent='Dark' }
+    else{ document.documentElement.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark'); darkToggle.textContent='Light' }
+  });
+
+  // Data store helpers
+  function getData(){ return JSON.parse(localStorage.getItem('aduanList')) || []; }
+  function saveData(d){ localStorage.setItem('aduanList', JSON.stringify(d)); }
+
+  // ID generator (persistent count)
+  function genID(){
+    let c = parseInt(localStorage.getItem('aduanCount')||'0',10);
+    c = c + 1;
+    localStorage.setItem('aduanCount', String(c));
+    return 'ADUAN-' + String(c).padStart(3,'0');
+  }
+
+  const toast = id => {
+    const t = document.getElementById('toast');
+    t.textContent = id; t.style.display='block';
+    setTimeout(()=> t.style.display='none', 2000);
+  };
+
+  // Submit form
+  document.getElementById('aduanForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const nama = document.getElementById('nama').value.trim();
+    const kelas = document.getElementById('kelas').value.trim();
+    const kategori = document.getElementById('kategori').value;
+    const aduan = document.getElementById('aduan').value.trim();
+    if(!nama || !kelas || !aduan){ alert('Sila lengkapkan semua medan'); return; }
+    const id = genID();
+    const item = { id, nama, kelas, kategori, aduan, status:'Dalam Proses', createdAt: new Date().toISOString() };
+    const list = getData(); list.push(item); saveData(list);
+
+    // notify + copy button
+    const notif = document.getElementById('notif');
+    notif.style.display='block';
+    notif.innerHTML = `✅ Aduan berjaya dihantar — ID: <strong>${id}</strong> <button id="copyId" class="copy-btn">Copy ID</button>`;
+    document.getElementById('copyId').addEventListener('click', ()=>{ navigator.clipboard.writeText(id).then(()=> toast('ID disalin ke clipboard')) });
+    document.getElementById('aduanForm').reset();
+    toast('Aduan disimpan');
+  });
+
+  // Clear local (admin convenience)
+  document.getElementById('clearLocal').addEventListener('click', ()=>{
+    if(!confirm('Padam semua data local? (ini hanya padam data local browser)')) return;
+    localStorage.removeItem('aduanList'); localStorage.removeItem('aduanCount');
+    document.getElementById('notif').style.display='none';
+    document.getElementById('searchResults').innerHTML='';
+    toast('Local storage dibersihkan');
+  });
+
+  // Check by ID
+  document.getElementById('btnCheck').addEventListener('click', ()=>{
+    const id = document.getElementById('checkID').value.trim();
+    const out = document.getElementById('result');
+    if(!id){ alert('Sila masukkan ID'); return; }
+    const r = getData().find(x=> x.id === id);
+    if(!r){ out.style.display='block'; out.innerHTML = `<b>❌ ID tidak dijumpai</b>`; return; }
+    const time = new Date(r.createdAt).toLocaleString();
+    const badge = r.status==='Dalam Proses' ? 's-proses' : r.status==='Selesai' ? 's-selesai' : 's-ditolak';
+    out.style.display='block';
+    out.innerHTML = `<div style="font-weight:700">${r.id} — ${r.nama}</div>
+      <div class="small">${r.kelas} • ${r.kategori} • ${time}</div>
+      <div style="margin-top:8px">${r.aduan}</div>
+      <div style="margin-top:10px"><span class="status-badge ${badge}">${r.status}</span></div>`;
+  });
+
+  // Search by name
+  document.getElementById('btnSearch').addEventListener('click', ()=>{
+    const q = document.getElementById('searchName').value.trim().toLowerCase();
+    const container = document.getElementById('searchResults'); container.innerHTML='';
+    if(!q){ container.innerHTML = `<div class="small">Masukkan nama untuk cari</div>`; return; }
+    const found = getData().filter(x=> x.nama.toLowerCase().includes(q));
+    if(found.length===0){ container.innerHTML = `<div class="small">Tiada aduan ditemui.</div>`; return; }
+    found.forEach(r=>{
+      const el = document.createElement('div'); el.style.padding='10px'; el.style.borderBottom='1px solid #eee';
+      el.innerHTML = `<div style="font-weight:700">${r.id} — ${r.nama}</div>
+        <div class="small">${new Date(r.createdAt).toLocaleString()} • ${r.kategori}</div>
+        <div style="margin-top:6px">${r.aduan}</div>
+        <div style="margin-top:8px"><span class="status-badge ${r.status==='Dalam Proses'?'s-proses':r.status==='Selesai'?'s-selesai':'s-ditolak'}">${r.status}</span>
+        <button class="copy-btn" style="margin-left:8px" onclick="navigator.clipboard.writeText('${r.id}').then(()=>toast('ID disalin'))">Copy ID</button></div>`;
+      container.appendChild(el);
+    });
+  });
+
+  // react to storage changes (sync with admin tab)
+  window.addEventListener('storage', e=>{
+    if(e.key === 'aduanList') { /* nothing to render here in student page */ }
+  });
+</script>
+</body>
+</html>

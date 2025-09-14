@@ -2,122 +2,104 @@
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal e-Aduan Pelajar</title>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; margin: 0; }
-    header { background: #004aad; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-    .container { max-width: 700px; margin: 30px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
-    h2 { color: #004aad; }
-    label { display: block; margin: 10px 0 5px; font-weight: bold; }
-    input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 15px; }
-    button { background: #004aad; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; }
-    button:hover { background: #003080; }
-    .msg { margin-top: 10px; font-weight: bold; }
-    .status-box { margin-top: 30px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f9; }
+    header { background: #004aad; color: #fff; padding: 15px; text-align: center; }
+    footer { background: #222; color: #fff; text-align: center; padding: 10px; margin-top: 20px; }
+    .container { max-width: 800px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #004aad; }
+    label { font-weight: bold; margin-top: 10px; display: block; }
+    input, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; }
+    button { background: #004aad; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 15px; }
+    button:hover { background: #0066ff; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
     th { background: #004aad; color: white; }
-    .status-proses { background: #fff3cd; color: #856404; padding: 5px 10px; border-radius: 6px; font-weight: bold; }
-    .status-selesai { background: #d4edda; color: #155724; padding: 5px 10px; border-radius: 6px; font-weight: bold; }
-    .status-ditolak { background: #f8d7da; color: #721c24; padding: 5px 10px; border-radius: 6px; font-weight: bold; }
+    .status-proses { color: #b58900; font-weight: bold; }
+    .status-selesai { color: green; font-weight: bold; }
+    .status-ditolak { color: red; font-weight: bold; }
+    .card { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #ddd; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Portal e-Aduan Pelajar</h1>
-  </header>
 
-  <div class="container">
-    <h2>Hantar Aduan Baru</h2>
-    <form id="aduanForm">
-      <label>Nama</label>
-      <input type="text" id="nama" required>
+<header>
+  <h1>Portal e-Aduan Pelajar</h1>
+</header>
 
-      <label>Kelas</label>
-      <input type="text" id="kelas" required>
+<div class="container">
+  <h2>Hantar Aduan</h2>
+  <form id="aduanForm">
+    <label>Nama:</label>
+    <input type="text" id="nama" required>
+    
+    <label>Aduan:</label>
+    <textarea id="aduan" rows="4" required></textarea>
+    
+    <button type="submit">Hantar</button>
+  </form>
 
-      <label>Aduan</label>
-      <textarea id="aduan" rows="5" required></textarea>
+  <div id="notif" class="card" style="display:none;"></div>
 
-      <button type="submit">📩 Hantar Aduan</button>
-    </form>
-    <div class="msg" id="msg"></div>
+  <h2>Status Aduan Saya</h2>
+  <table id="aduanTable">
+    <thead>
+      <tr>
+        <th>ID Aduan</th>
+        <th>Aduan</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-    <div class="status-box">
-      <h2>Semak Status Aduan</h2>
-      <label>Masukkan Nama Anda</label>
-      <input type="text" id="semakNama" placeholder="Contoh: Ali Bin Abu">
-      <button onclick="semakStatus()">🔍 Semak</button>
+<footer>
+  &copy; 2025 e-Aduan F6 | Dibangunkan khas untuk MPP
+</footer>
 
-      <table id="resultTable" style="display:none;">
-        <thead>
-          <tr>
-            <th>ID Aduan</th>
-            <th>Kelas</th>
-            <th>Aduan</th>
-            <th>Masa</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
+<script>
+  let aduanList = JSON.parse(localStorage.getItem("aduanList")) || [];
 
-  <script>
-    function generateID(){
-      let count = localStorage.getItem("aduanCount") || 0;
-      count++;
-      localStorage.setItem("aduanCount", count);
-      return "ADUAN-" + String(count).padStart(4,"0");
-    }
+  function generateID() {
+    return "ADUAN-" + String(aduanList.length + 1).padStart(3, "0");
+  }
 
-    document.getElementById("aduanForm").addEventListener("submit", function(e){
-      e.preventDefault();
-      const nama = document.getElementById("nama").value;
-      const kelas = document.getElementById("kelas").value;
-      const aduan = document.getElementById("aduan").value;
-      const id = generateID();
-
-      const data = { id, nama, kelas, aduan, status: "Dalam Proses", masa: new Date().toLocaleString() };
-
-      let senarai = JSON.parse(localStorage.getItem("aduanPelajar")) || [];
-      senarai.push(data);
-      localStorage.setItem("aduanPelajar", JSON.stringify(senarai));
-
-      document.getElementById("msg").innerHTML = `✅ Aduan berjaya dihantar! <br><b>ID Anda: ${id}</b>`;
-      document.getElementById("aduanForm").reset();
+  function renderAduanPelajar() {
+    const tbody = document.querySelector("#aduanTable tbody");
+    tbody.innerHTML = "";
+    aduanList.forEach(a => {
+      let statusClass = a.status === "Dalam Proses" ? "status-proses" : 
+                        a.status === "Selesai" ? "status-selesai" : "status-ditolak";
+      tbody.innerHTML += `
+        <tr>
+          <td>${a.id}</td>
+          <td>${a.aduan}</td>
+          <td class="${statusClass}">${a.status}</td>
+        </tr>`;
     });
+  }
 
-    function semakStatus(){
-      const namaCari = document.getElementById("semakNama").value.trim().toLowerCase();
-      const senarai = JSON.parse(localStorage.getItem("aduanPelajar")) || [];
-      const resultTable = document.getElementById("resultTable");
-      const tbody = resultTable.querySelector("tbody");
+  document.getElementById("aduanForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const nama = document.getElementById("nama").value;
+    const aduan = document.getElementById("aduan").value;
 
-      tbody.innerHTML = "";
-      const filter = senarai.filter(a => a.nama.toLowerCase() === namaCari);
+    const newAduan = { id: generateID(), nama, aduan, status: "Dalam Proses" };
+    aduanList.push(newAduan);
+    localStorage.setItem("aduanList", JSON.stringify(aduanList));
 
-      if(filter.length > 0){
-        resultTable.style.display = "table";
-        filter.forEach(item => {
-          const statusClass = item.status === "Dalam Proses" ? "status-proses" :
-                             item.status === "Selesai" ? "status-selesai" : "status-ditolak";
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${item.id}</td>
-            <td>${item.kelas}</td>
-            <td>${item.aduan}</td>
-            <td>${item.masa}</td>
-            <td><span class="${statusClass}">${item.status}</span></td>
-          `;
-          tbody.appendChild(row);
-        });
-      } else {
-        resultTable.style.display = "none";
-        alert("❌ Tiada aduan ditemui untuk nama ini.");
-      }
-    }
-  </script>
+    document.getElementById("notif").style.display = "block";
+    document.getElementById("notif").innerHTML = `✅ Aduan berjaya dihantar! ID anda: <b>${newAduan.id}</b>`;
+
+    e.target.reset();
+    renderAduanPelajar();
+  });
+
+  renderAduanPelajar();
+</script>
+
 </body>
 </html>

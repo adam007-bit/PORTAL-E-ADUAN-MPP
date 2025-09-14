@@ -1,1 +1,196 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>e-Aduan · Admin</title>
+<style>
+  :root{ --bg:#f3f6fa; --card:#fff; --primary:#004aad; --muted:#6b7280; --danger:#dc3545; --success:#16a34a; --radius:12px }
+  body{font-family:Inter,system-ui,Arial;margin:0;background:var(--bg);color:inherit}
+  header{display:flex;align-items:center;gap:12px;padding:14px;background:#111;color:#fff}
+  header img.logo{width:60px;height:60px;border-radius:10px;background:#fff;padding:6px;object-fit:contain}
+  .wrap{max-width:1200px;margin:20px auto;padding:12px}
+  .card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 8px 28px rgba(2,6,23,0.06)}
+  .toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .controls{display:flex;gap:8px;align-items:center}
+  input[type="text"], select{padding:8px;border-radius:8px;border:1px solid #e6e9ef}
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
+  th,td{padding:10px;border:1px solid #eee;text-align:left;vertical-align:top}
+  th{background:#f8fafc}
+  .badge{padding:6px 10px;border-radius:999px;font-weight:700}
+  .b-proses{background:#fff7ed;color:#92400e}
+  .b-selesai{background:#ecfdf5;color:var(--success)}
+  .b-ditolak{background:#fff1f2;color:var(--danger)}
+  .btn{padding:8px 10px;border-radius:8px;border:0;cursor:pointer}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-danger{background:var(--danger);color:#fff}
+  .btn-ghost{background:transparent;border:1px solid #e6e9ef}
+  .small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <img class="logo" src="logo.png" alt="Logo Sekolah">
+  <div>
+    <div style="font-weight:700">SEMSIRA · Panel Admin</div>
+    <div class="small">Urus aduan pelajar — tiada login (setiap orang yang ada link boleh akses)</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <div style="font-weight:700">Dashboard Aduan</div>
+        <div class="small">Data local (localStorage). Gunakan Export untuk salin data.</div>
+      </div>
+
+      <div class="controls">
+        <button id="exportCsv" class="btn btn-primary">Export CSV</button>
+        <button id="clearAll" class="btn btn-danger">Clear All</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:14px">
+      <div class="card" style="flex:1;text-align:center;">
+        <div style="font-size:20px;font-weight:700" id="total">0</div>
+        <div class="small">Jumlah Aduan</div>
+      </div>
+      <div class="card" style="flex:1;text-align:center;">
+        <div style="font-size:20px;font-weight:700" id="inproc">0</div>
+        <div class="small">Dalam Proses</div>
+      </div>
+      <div class="card" style="flex:1;text-align:center;">
+        <div style="font-size:20px;font-weight:700" id="done">0</div>
+        <div class="small">Selesai</div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px" class="card">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="q" type="text" placeholder="Cari ID / nama / aduan..." style="flex:1" />
+        <select id="filterStatus">
+          <option value="">Semua Status</option>
+          <option value="Dalam Proses">Dalam Proses</option>
+          <option value="Selesai">Selesai</option>
+          <option value="Ditolak">Ditolak</option>
+        </select>
+        <button id="btnRefresh" class="btn btn-ghost">Segar</button>
+      </div>
+
+      <div style="overflow:auto;margin-top:12px">
+        <table id="tb">
+          <thead>
+            <tr><th style="width:120px">ID</th><th>Nama</th><th>Kelas</th><th>Kategori</th><th style="width:42%">Aduan</th><th>Tarikh</th><th>Status</th><th>Aksi</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // data helpers
+  function getData(){ return JSON.parse(localStorage.getItem('aduanList')) || []; }
+  function saveData(d){ localStorage.setItem('aduanList', JSON.stringify(d)); }
+
+  const tbody = document.querySelector('#tb tbody');
+
+  function render(){
+    const data = getData();
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    const filter = document.getElementById('filterStatus').value;
+
+    // stats
+    document.getElementById('total').innerText = data.length;
+    document.getElementById('inproc').innerText = data.filter(x=>x.status==='Dalam Proses').length;
+    document.getElementById('done').innerText = data.filter(x=>x.status==='Selesai').length;
+
+    tbody.innerHTML = '';
+    data.forEach((r, i)=>{
+      if(filter && r.status !== filter) return;
+      const hay = `${r.id} ${r.nama} ${r.aduan} ${r.kategori}`.toLowerCase();
+      if(q && !hay.includes(q)) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td>${r.nama}</td>
+        <td>${r.kelas||''}</td>
+        <td>${r.kategori||''}</td>
+        <td style="white-space:pre-wrap">${r.aduan}</td>
+        <td>${new Date(r.createdAt).toLocaleString()}</td>
+        <td><span class="badge ${r.status==='Dalam Proses'?'b-proses':r.status==='Selesai'?'b-selesai':'b-ditolak'}">${r.status}</span></td>
+        <td>
+          <select onchange="updateStatus(${i}, this.value)">
+            <option ${r.status==='Dalam Proses'?'selected':''}>Dalam Proses</option>
+            <option ${r.status==='Selesai'?'selected':''}>Selesai</option>
+            <option ${r.status==='Ditolak'?'selected':''}>Ditolak</option>
+          </select>
+          <button onclick="deleteRow(${i})" class="btn btn-danger" style="margin-left:8px">Padam</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateStatus(index, newStatus){
+    const data = getData();
+    data[index].status = newStatus;
+    saveData(data);
+    render();
+  }
+
+  function deleteRow(index){
+    if(!confirm('Padam aduan ini?')) return;
+    const data = getData();
+    data.splice(index,1);
+    saveData(data);
+    render();
+  }
+
+  function exportCSV(){
+    const data = getData();
+    if(!data.length){ alert('Tiada data untuk dieksport'); return; }
+    const header = ['ID','Nama','Kelas','Kategori','Aduan','Tarikh','Status'];
+    const lines = [header.join(',')];
+    data.forEach(r=>{
+      const row = [
+        `"${r.id}"`,
+        `"${(r.nama||'').replace(/"/g,'""')}"`,
+        `"${(r.kelas||'').replace(/"/g,'""')}"`,
+        `"${(r.kategori||'').replace(/"/g,'""')}"`,
+        `"${(r.aduan||'').replace(/"/g,'""')}"`,
+        `"${new Date(r.createdAt).toLocaleString()}"`,
+        `"${r.status}"`
+      ];
+      lines.push(row.join(','));
+    });
+    const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download = `aduan_export_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+
+  function clearAll(){
+    if(!confirm('Padam semua data local?')) return;
+    localStorage.removeItem('aduanList'); localStorage.removeItem('aduanCount');
+    render();
+  }
+
+  // hooks
+  document.getElementById('btnRefresh').addEventListener('click', render);
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('filterStatus').addEventListener('change', render);
+  document.getElementById('exportCsv').addEventListener('click', exportCSV);
+  document.getElementById('clearAll').addEventListener('click', clearAll);
+
+  // sync when other tab changes
+  window.addEventListener('storage', e => { if(e.key === 'aduanList') render(); });
+
+  // init
+  render();
+</script>
+</body>
+</html>
 

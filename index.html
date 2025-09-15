@@ -2,42 +2,88 @@
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Pelajar Aduan</title>
+  <title>Portal Pelajar - Hantar & Semak Aduan</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
-    h1 { text-align: center; margin-bottom: 20px; }
-    form { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 4px; border: 1px solid #ccc; }
-    button { background: #007BFF; color: #fff; font-weight: bold; cursor: pointer; border: none; }
-    button:hover { background: #0056b3; }
-    .aduan-list { max-width: 700px; margin: 30px auto; }
-    .aduan-item { background: #fff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .status { font-weight: bold; color: green; }
-    .nota { font-style: italic; color: #555; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 30px;
+      font-size: 26px;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .aduan-list {
+      margin-top: 25px;
+      text-align: left;
+    }
+    .aduan-item {
+      background: #f0f4ff;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .aduan-item strong {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <h1>PORTAL PELAJAR - HANTAR & SEMAK ADUAN</h1>
+  <div class="container">
+    <!-- Form hantar aduan -->
+    <input type="text" id="nama" placeholder="Nama Penuh">
+    <input type="text" id="kelas" placeholder="Kelas">
+    <textarea id="aduan" placeholder="Tulis aduan anda..."></textarea>
+    <button onclick="hantarAduan()">Hantar Aduan</button>
 
-  <!-- Borang Hantar Aduan -->
-  <form id="aduanForm">
-    <input type="text" id="nama" placeholder="Nama Penuh" required>
-    <input type="text" id="kelas" placeholder="Kelas" required>
-    <textarea id="aduan" placeholder="Tulis aduan anda..." required></textarea>
-    <button type="submit">Hantar Aduan</button>
-  </form>
+    <!-- Senarai aduan -->
+    <div class="aduan-list" id="aduanList">
+      <h3>Senarai Aduan Anda</h3>
+      <div id="list"></div>
+    </div>
+  </div>
 
-  <!-- Senarai Aduan Pelajar -->
-  <div id="aduanList" class="aduan-list"></div>
-
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script type="module">
-    // Import Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } 
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // ✅ Config Firebase projek awak
     const firebaseConfig = {
       apiKey: "AIzaSyCkStR_IPVoyw83P9M3Xm0QayvNmHwsjz0",
       authDomain: "aduan-semsira.firebaseapp.com",
@@ -47,72 +93,61 @@
       appId: "1:900897970331:web:5bea8305599c97a0e30e3e"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const aduanRef = collection(db, "aduan");
 
-    const aduanForm = document.getElementById("aduanForm");
-    const aduanList = document.getElementById("aduanList");
+    let currentNama = "";
+    let currentKelas = "";
 
-    // Hantar aduan baru
-    aduanForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    async function hantarAduan() {
       const nama = document.getElementById("nama").value.trim();
       const kelas = document.getElementById("kelas").value.trim();
       const aduan = document.getElementById("aduan").value.trim();
 
-      try {
-        await addDoc(collection(db, "aduan"), {
-          nama, kelas, aduan,
-          status: "Dalam Semakan",
-          nota: "",
-          tarikh: new Date()
-        });
-        alert("✅ Aduan berjaya dihantar!");
-        aduanForm.reset();
-      } catch (err) {
-        alert("❌ Ralat: " + err.message);
+      if (!nama || !kelas || !aduan) {
+        alert("Sila isi semua ruangan!");
+        return;
       }
-    });
 
-    // Papar hanya aduan pelajar ikut nama + kelas
-    function loadAduanPelajar(nama, kelas) {
-      const q = query(
-        collection(db, "aduan"),
-        where("nama", "==", nama),
-        where("kelas", "==", kelas),
-        orderBy("tarikh", "desc")
-      );
+      currentNama = nama;
+      currentKelas = kelas;
 
-      onSnapshot(q, (snapshot) => {
-        aduanList.innerHTML = "<h2>Senarai Aduan Anda</h2>";
-        if (snapshot.empty) {
-          aduanList.innerHTML += "<p>Tiada aduan ditemui.</p>";
-        }
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const div = document.createElement("div");
-          div.className = "aduan-item";
-          div.innerHTML = `
-            <p><strong>Aduan:</strong> ${data.aduan}</p>
-            <p class="status">Status: ${data.status}</p>
-            ${data.nota ? `<p class="nota">Nota Admin: ${data.nota}</p>` : ""}
-            <small>Tarikh: ${data.tarikh.toDate().toLocaleString()}</small>
-          `;
-          aduanList.appendChild(div);
-        });
+      await addDoc(aduanRef, {
+        nama, kelas, aduan,
+        masa: new Date()
       });
+
+      document.getElementById("aduan").value = "";
+      paparAduan();
     }
 
-    // Bila pelajar isi nama + kelas → terus papar aduan dia
-    document.getElementById("kelas").addEventListener("blur", () => {
-      const nama = document.getElementById("nama").value.trim();
-      const kelas = document.getElementById("kelas").value.trim();
-      if (nama && kelas) {
-        loadAduanPelajar(nama, kelas);
-      }
-    });
+    async function paparAduan() {
+      if (!currentNama || !currentKelas) return;
+
+      const q = query(
+        aduanRef, 
+        where("nama", "==", currentNama), 
+        where("kelas", "==", currentKelas),
+        orderBy("masa", "desc")
+      );
+      const snapshot = await getDocs(q);
+      const listDiv = document.getElementById("list");
+      listDiv.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "aduan-item";
+        div.innerHTML = `
+          <strong>${data.nama} (${data.kelas})</strong>
+          <p>${data.aduan}</p>
+        `;
+        listDiv.appendChild(div);
+      });
+    }
   </script>
 </body>
 </html>
+
 

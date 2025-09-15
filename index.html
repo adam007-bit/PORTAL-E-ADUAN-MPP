@@ -70,6 +70,7 @@
     <input type="text" id="kelas" placeholder="Kelas">
     <textarea id="aduan" placeholder="Tulis aduan anda..."></textarea>
     <button onclick="hantarAduan()">Hantar Aduan</button>
+    <button onclick="semakAduan()">Semak Aduan</button>
 
     <!-- Senarai aduan -->
     <div class="aduan-list" id="aduanList">
@@ -146,8 +147,25 @@
         listDiv.appendChild(div);
       });
     }
+
+    function semakAduan() {
+      const nama = document.getElementById("nama").value.trim();
+      const kelas = document.getElementById("kelas").value.trim();
+      if (!nama || !kelas) {
+        alert("Masukkan nama dan kelas untuk semak aduan anda!");
+        return;
+      }
+      currentNama = nama;
+      currentKelas = kelas;
+      paparAduan();
+    }
+
+    // 🚀 Export supaya butang boleh panggil
+    window.hantarAduan = hantarAduan;
+    window.semakAduan = semakAduan;
   </script>
 </body>
 </html>
+
 
 
